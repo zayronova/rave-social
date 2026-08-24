@@ -1,0 +1,5 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+export default async function Profile(){const user=await getCurrentUser();if(!user)redirect("/login");const posts=await prisma.post.findMany({where:{authorId:user.id},orderBy:{createdAt:"desc"},include:{_count:{select:{likes:true,comments:true}}}});return <><header className="topbar"><div className="brand">Rave Social</div><nav className="nav"><Link href="/">Home</Link><Link href="/pages">Pages</Link></nav></header><main className="container" style={{paddingTop:24}}><section className="card"><div className="avatar" style={{width:80,height:80}}>{user.name[0].toUpperCase()}</div><h1>{user.name}</h1><p>{user.bio||"No bio yet."}</p><p className="stats">{posts.length} posts · Joined {user.createdAt.toLocaleDateString()}</p></section><h2>Your posts</h2>{posts.map(p=><article className="panel post" key={p.id}><strong>{user.name}</strong><p>{p.content}</p><div className="stats">{p._count.likes} likes · {p._count.comments} comments</div></article>)}</main></>}
