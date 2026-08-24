@@ -1,0 +1,5 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+export default async function Pages(){const user=await getCurrentUser();if(!user)redirect("/login");const pages=await prisma.page.findMany({where:{ownerId:user.id},orderBy:{createdAt:"desc"}});return <><header className="topbar"><div className="brand">Rave Social</div><nav className="nav"><Link href="/">Home</Link><Link href="/profile">Profile</Link></nav></header><main className="container" style={{paddingTop:24}}><section className="card"><h1>Your Pages</h1><p>Create and manage public pages from your Rave Social account.</p><form action="/api/pages" method="post"><input className="field" name="name" placeholder="Page name" required maxLength={100}/><input className="field" name="bio" placeholder="Short bio" maxLength={300}/><button className="primary">Create page</button></form></section>{pages.map(p=><article className="panel post" key={p.id}><h2>{p.name}</h2><p>{p.bio}</p><div className="stats">/{p.slug}</div></article>)}</main></>}
