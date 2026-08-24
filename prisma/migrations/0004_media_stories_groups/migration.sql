@@ -1,0 +1,10 @@
+CREATE TABLE "Media" ("id" TEXT NOT NULL,"ownerId" TEXT NOT NULL,"postId" TEXT,"url" TEXT NOT NULL,"storageKey" TEXT NOT NULL,"mimeType" TEXT NOT NULL,"size" INTEGER NOT NULL,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "Media_pkey" PRIMARY KEY ("id"),CONSTRAINT "Media_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE CASCADE,CONSTRAINT "Media_postId_fkey" FOREIGN KEY ("postId") REFERENCES "Post"("id") ON DELETE CASCADE);
+CREATE INDEX "Media_ownerId_createdAt_idx" ON "Media"("ownerId","createdAt");
+CREATE INDEX "Media_postId_idx" ON "Media"("postId");
+CREATE TABLE "Story" ("id" TEXT NOT NULL,"authorId" TEXT NOT NULL,"mediaUrl" TEXT NOT NULL,"text" TEXT NOT NULL DEFAULT '',"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"expiresAt" TIMESTAMP(3) NOT NULL,CONSTRAINT "Story_pkey" PRIMARY KEY ("id"),CONSTRAINT "Story_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE CASCADE);
+CREATE INDEX "Story_authorId_expiresAt_idx" ON "Story"("authorId","expiresAt");
+CREATE TABLE "Group" ("id" TEXT NOT NULL,"name" TEXT NOT NULL,"slug" TEXT NOT NULL,"description" TEXT NOT NULL DEFAULT '',"ownerId" TEXT NOT NULL,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "Group_pkey" PRIMARY KEY ("id"),CONSTRAINT "Group_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE CASCADE);
+CREATE UNIQUE INDEX "Group_slug_key" ON "Group"("slug");
+CREATE INDEX "Group_ownerId_idx" ON "Group"("ownerId");
+CREATE TABLE "GroupMember" ("groupId" TEXT NOT NULL,"userId" TEXT NOT NULL,"role" TEXT NOT NULL DEFAULT 'member',"joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "GroupMember_pkey" PRIMARY KEY ("groupId","userId"),CONSTRAINT "GroupMember_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "Group"("id") ON DELETE CASCADE,CONSTRAINT "GroupMember_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE);
+CREATE INDEX "GroupMember_userId_idx" ON "GroupMember"("userId");
