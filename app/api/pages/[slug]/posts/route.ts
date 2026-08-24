@@ -1,0 +1,7 @@
+import {NextResponse} from "next/server";
+import {z} from "zod";
+import {prisma} from "@/lib/prisma";
+import {getCurrentUser} from "@/lib/auth";
+const schema=z.object({content:z.string().trim().min(1).max(5000)});
+export async function GET(_:Request,context:{params:Promise<{slug:string}>}){const {slug}=await context.params;const page=await prisma.page.findUnique({where:{slug},select:{id:true,name:true}});if(!page)return NextResponse.json({error:"Page not found."},{status:404});const posts=await prisma.pagePost.findMany({where:{pageId:page.id},orderBy:{createdAt:"desc"},take:50,include:{_count:{select:{likes:true,comments:true}}}});return NextResponse.json({page,posts});}
+export async function POST(request:Request,context:{params:Promise<{slug:string}>}){const user=await getCurrentUser();if(!user)return NextResponse.json({error:"Authentication required."},{status:401});const {slug}=await context.params;const page=await prisma.page.findUnique({where:{slug},select:{id:true,ownerId:true}});if(!page)return NextResponse.json({error:"Page not found."},{status:404});if(page.ownerId!==user.id)return NextResponse.json({error:"Only the Page owner can publish."},{status:403});const parsed=schema.safeParse(await request.json());if(!parsed.success)return NextResponse.json({error:"Invalid post content."},{status:400});const post=await prisma.pagePost.create({data:{pageId:page.id,content:parsed.data.content}});return NextResponse.json({post},{status:201});}
