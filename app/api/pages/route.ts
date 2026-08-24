@@ -1,0 +1,7 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
+const schema=z.object({name:z.string().trim().min(2).max(100),bio:z.string().trim().max(300).optional()});
+function slugify(v:string){return v.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,70)}
+export async function POST(request:Request){const user=await getCurrentUser();if(!user)return NextResponse.redirect(new URL("/login",request.url));let body:any;const type=request.headers.get("content-type")||"";if(type.includes("application/json"))body=await request.json();else{const f=await request.formData();body={name:f.get("name"),bio:f.get("bio")||""}}const p=schema.safeParse(body);if(!p.success)return NextResponse.json({error:"Invalid page details."},{status:400});let slug=slugify(p.data.name);if(!slug)slug="page";let base=slug;let n=1;while(await prisma.page.findUnique({where:{slug}})){slug=`${base}-${n++}`}const page=await prisma.page.create({data:{name:p.data.name,bio:p.data.bio||"",slug,ownerId:user.id}});if(!type.includes("application/json"))return NextResponse.redirect(new URL("/pages",request.url));return NextResponse.json({page},{status:201})}
