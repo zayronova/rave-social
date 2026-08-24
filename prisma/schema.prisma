@@ -8,183 +8,44 @@ datasource db {
 }
 
 model User {
-  id           String               @id @default(cuid())
-  name         String
-  email        String               @unique
+  id String @id @default(cuid())
+  name String
+  email String @unique
   passwordHash String
-  bio          String               @default("")
-  avatarUrl    String               @default("")
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  posts        Post[]
-  pages        Page[]
-  comments     Comment[]
-  likes        Like[]
-  sessions     Session[]
-  followers    Follow[]             @relation("followers")
-  following    Follow[]             @relation("following")
+  bio String @default("")
+  avatarUrl String @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  posts Post[]
+  pages Page[]
+  pageFollows PageFollow[]
+  comments Comment[]
+  likes Like[]
+  sessions Session[]
+  followers Follow[] @relation("followers")
+  following Follow[] @relation("following")
   sentMessages Message[]
-  memberships  ConversationMember[]
-  notifications Notification[]      @relation("notificationRecipient")
+  memberships ConversationMember[]
+  notifications Notification[] @relation("notificationRecipient")
   activityNotifications Notification[] @relation("notificationActor")
-  media        Media[]
-  stories      Story[]
-  ownedGroups  Group[]
+  media Media[]
+  stories Story[]
+  ownedGroups Group[]
   groupMembers GroupMember[]
 }
 
-model Post {
-  id        String         @id @default(cuid())
-  content   String
-  authorId  String
-  createdAt DateTime       @default(now())
-  author    User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  comments  Comment[]
-  likes     Like[]
-  media     Media[]
-  notifications Notification[]
-  @@index([authorId, createdAt])
-}
-
-model Comment {
-  id        String   @id @default(cuid())
-  content   String
-  authorId  String
-  postId    String
-  createdAt DateTime @default(now())
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  @@index([postId, createdAt])
-}
-
-model Like {
-  id        String   @id @default(cuid())
-  userId    String
-  postId    String
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  @@unique([userId, postId])
-}
-
-model Page {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  bio       String   @default("")
-  ownerId   String
-  createdAt DateTime @default(now())
-  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-}
-
-model Session {
-  id        String   @id @default(cuid())
-  tokenHash String   @unique
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@index([userId])
-}
-
-model Follow {
-  followerId  String
-  followingId String
-  createdAt   DateTime @default(now())
-  follower    User @relation("following", fields: [followerId], references: [id], onDelete: Cascade)
-  following   User @relation("followers", fields: [followingId], references: [id], onDelete: Cascade)
-  @@id([followerId, followingId])
-  @@index([followingId])
-}
-
-model Conversation {
-  id        String               @id @default(cuid())
-  createdAt DateTime             @default(now())
-  members   ConversationMember[]
-  messages  Message[]
-}
-
-model ConversationMember {
-  conversationId String
-  userId         String
-  joinedAt       DateTime @default(now())
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@id([conversationId, userId])
-  @@index([userId])
-}
-
-model Message {
-  id             String       @id @default(cuid())
-  conversationId String
-  senderId       String
-  content        String
-  createdAt      DateTime     @default(now())
-  readAt         DateTime?
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
-  @@index([conversationId, createdAt])
-}
-
-model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  actorId   String
-  type      String
-  postId    String?
-  createdAt DateTime @default(now())
-  readAt    DateTime?
-  user      User     @relation("notificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
-  actor     User     @relation("notificationActor", fields: [actorId], references: [id], onDelete: Cascade)
-  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
-  @@index([userId, createdAt])
-}
-
-model Media {
-  id        String   @id @default(cuid())
-  ownerId   String
-  postId    String?
-  url       String
-  storageKey String
-  mimeType  String
-  size      Int
-  createdAt DateTime @default(now())
-  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
-  @@index([ownerId, createdAt])
-  @@index([postId])
-}
-
-model Story {
-  id        String   @id @default(cuid())
-  authorId  String
-  mediaUrl  String
-  text      String   @default("")
-  createdAt DateTime @default(now())
-  expiresAt DateTime
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  @@index([authorId, expiresAt])
-}
-
-model Group {
-  id          String        @id @default(cuid())
-  name        String
-  slug        String        @unique
-  description String        @default("")
-  ownerId     String
-  createdAt   DateTime      @default(now())
-  owner       User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  members     GroupMember[]
-  @@index([ownerId])
-}
-
-model GroupMember {
-  groupId   String
-  userId    String
-  role      String   @default("member")
-  joinedAt  DateTime @default(now())
-  group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@id([groupId, userId])
-  @@index([userId])
-}
+model Post { id String @id @default(cuid()); content String; authorId String; createdAt DateTime @default(now()); author User @relation(fields:[authorId],references:[id],onDelete:Cascade); comments Comment[]; likes Like[]; media Media[]; notifications Notification[]; @@index([authorId,createdAt]) }
+model Comment { id String @id @default(cuid()); content String; authorId String; postId String; createdAt DateTime @default(now()); author User @relation(fields:[authorId],references:[id],onDelete:Cascade); post Post @relation(fields:[postId],references:[id],onDelete:Cascade); @@index([postId,createdAt]) }
+model Like { id String @id @default(cuid()); userId String; postId String; createdAt DateTime @default(now()); user User @relation(fields:[userId],references:[id],onDelete:Cascade); post Post @relation(fields:[postId],references:[id],onDelete:Cascade); @@unique([userId,postId]) }
+model Page { id String @id @default(cuid()); name String; slug String @unique; bio String @default(""); ownerId String; createdAt DateTime @default(now()); owner User @relation(fields:[ownerId],references:[id],onDelete:Cascade); followers PageFollow[]; @@index([ownerId]) }
+model PageFollow { pageId String; userId String; createdAt DateTime @default(now()); page Page @relation(fields:[pageId],references:[id],onDelete:Cascade); user User @relation(fields:[userId],references:[id],onDelete:Cascade); @@id([pageId,userId]); @@index([userId]) }
+model Session { id String @id @default(cuid()); tokenHash String @unique; userId String; expiresAt DateTime; createdAt DateTime @default(now()); user User @relation(fields:[userId],references:[id],onDelete:Cascade); @@index([userId]) }
+model Follow { followerId String; followingId String; createdAt DateTime @default(now()); follower User @relation("following",fields:[followerId],references:[id],onDelete:Cascade); following User @relation("followers",fields:[followingId],references:[id],onDelete:Cascade); @@id([followerId,followingId]); @@index([followingId]) }
+model Conversation { id String @id @default(cuid()); createdAt DateTime @default(now()); members ConversationMember[]; messages Message[] }
+model ConversationMember { conversationId String; userId String; joinedAt DateTime @default(now()); conversation Conversation @relation(fields:[conversationId],references:[id],onDelete:Cascade); user User @relation(fields:[userId],references:[id],onDelete:Cascade); @@id([conversationId,userId]); @@index([userId]) }
+model Message { id String @id @default(cuid()); conversationId String; senderId String; content String; createdAt DateTime @default(now()); readAt DateTime?; conversation Conversation @relation(fields:[conversationId],references:[id],onDelete:Cascade); sender User @relation(fields:[senderId],references:[id],onDelete:Cascade); @@index([conversationId,createdAt]) }
+model Notification { id String @id @default(cuid()); userId String; actorId String; type String; postId String?; createdAt DateTime @default(now()); readAt DateTime?; user User @relation("notificationRecipient",fields:[userId],references:[id],onDelete:Cascade); actor User @relation("notificationActor",fields:[actorId],references:[id],onDelete:Cascade); post Post? @relation(fields:[postId],references:[id],onDelete:Cascade); @@index([userId,createdAt]) }
+model Media { id String @id @default(cuid()); ownerId String; postId String?; url String; storageKey String; mimeType String; size Int; createdAt DateTime @default(now()); owner User @relation(fields:[ownerId],references:[id],onDelete:Cascade); post Post? @relation(fields:[postId],references:[id],onDelete:Cascade); @@index([ownerId,createdAt]); @@index([postId]) }
+model Story { id String @id @default(cuid()); authorId String; mediaUrl String; text String @default(""); createdAt DateTime @default(now()); expiresAt DateTime; author User @relation(fields:[authorId],references:[id],onDelete:Cascade); @@index([authorId,expiresAt]) }
+model Group { id String @id @default(cuid()); name String; slug String @unique; description String @default(""); ownerId String; createdAt DateTime @default(now()); owner User @relation(fields:[ownerId],references:[id],onDelete:Cascade); members GroupMember[]; @@index([ownerId]) }
+model GroupMember { groupId String; userId String; role String @default("member"); joinedAt DateTime @default(now()); group Group @relation(fields:[groupId],references:[id],onDelete:Cascade); user User @relation(fields:[userId],references:[id],onDelete:Cascade); @@id([groupId,userId]); @@index([userId]) }
