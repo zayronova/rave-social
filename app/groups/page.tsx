@@ -1,0 +1,9 @@
+"use client";
+
+import { FormEvent, useEffect, useState } from "react";
+
+type Group={id:string;name:string;slug:string;description:string;owner:{id:string;name:string};_count?:{members:number}};
+export default function GroupsPage(){const[groups,setGroups]=useState<Group[]>([]);const[name,setName]=useState("");const[slug,setSlug]=useState("");const[description,setDescription]=useState("");const[error,setError]=useState("");
+async function load(){const r=await fetch("/api/groups");const d=await r.json();if(!r.ok)return setError(d.error||"Unable to load groups.");setGroups(d.groups)}useEffect(()=>{load()},[]);
+async function submit(e:FormEvent){e.preventDefault();setError("");const r=await fetch("/api/groups",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,slug,description})});const d=await r.json();if(!r.ok)return setError(d.error||"Unable to create group.");setName("");setSlug("");setDescription("");load()}
+return <main className="container" style={{paddingTop:30}}><section className="card"><h1>Groups</h1>{error&&<div className="error">{error}</div>}<form onSubmit={submit}><input className="field" placeholder="Group name" value={name} onChange={e=>setName(e.target.value)} required/><input className="field" placeholder="group-slug" value={slug} onChange={e=>setSlug(e.target.value)} required/><textarea className="field" placeholder="Description" value={description} onChange={e=>setDescription(e.target.value)} maxLength={1000}/><button className="primary">Create group</button></form></section><section style={{display:"grid",gap:12,marginTop:16}}>{groups.map(g=><article className="card" key={g.id}><h2>{g.name}</h2><div className="stats">/{g.slug} · Owner: {g.owner.name} · {g._count?.members??0} members</div><p>{g.description}</p></article>)}</section></main>}
