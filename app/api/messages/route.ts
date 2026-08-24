@@ -3,26 +3,6 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 
-const schema = z.object({ conversationId: z.string().min(1), content: z.string().trim().min(1).max(5000) });
-
-export async function GET(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-  const conversationId = new URL(request.url).searchParams.get("conversationId");
-  if (!conversationId) return NextResponse.json({ error: "conversationId is required." }, { status: 400 });
-  const member = await prisma.conversationMember.findUnique({ where: { conversationId_userId: { conversationId, userId: user.id } } });
-  if (!member) return NextResponse.json({ error: "Not a conversation member." }, { status: 403 });
-  const messages = await prisma.message.findMany({ where: { conversationId }, orderBy: { createdAt: "asc" }, take: 100 });
-  return NextResponse.json({ messages });
-}
-
-export async function POST(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-  const parsed = schema.safeParse(await request.json());
-  if (!parsed.success) return NextResponse.json({ error: "Invalid message." }, { status: 400 });
-  const member = await prisma.conversationMember.findUnique({ where: { conversationId_userId: { conversationId: parsed.data.conversationId, userId: user.id } } });
-  if (!member) return NextResponse.json({ error: "Not a conversation member." }, { status: 403 });
-  const message = await prisma.message.create({ data: { conversationId: parsed.data.conversationId, senderId: user.id, content: parsed.data.content } });
-  return NextResponse.json({ message }, { status: 201 });
-}
+const schema=z.object({conversationId:z.string().min(1),content:z.string().trim().min(1).max(5000)});
+export async function GET(request:Request){const user=await getCurrentUser();if(!user)return NextResponse.json({error:"Authentication required."},{status:401});const conversationId=new URL(request.url).searchParams.get("conversationId");if(!conversationId)return NextResponse.json({error:"conversationId is required."},{status:400});const member=await prisma.conversationMember.findUnique({where:{conversationId_userId:{conversationId,userId:user.id}}});if(!member)return NextResponse.json({error:"Not a conversation member."},{status:403});const messages=await prisma.message.findMany({where:{conversationId},orderBy:{createdAt:"asc"},take:100,include:{sender:{select:{id:true,name:true,avatarUrl:true}}}});return NextResponse.json({messages});}
+export async function POST(request:Request){const user=await getCurrentUser();if(!user)return NextResponse.json({error:"Authentication required."},{status:401});const parsed=schema.safeParse(await request.json());if(!parsed.success)return NextResponse.json({error:"Invalid message."},{status:400});const member=await prisma.conversationMember.findUnique({where:{conversationId_userId:{conversationId:parsed.data.conversationId,userId:user.id}}});if(!member)return NextResponse.json({error:"Not a conversation member."},{status:403});const message=await prisma.message.create({data:{conversationId:parsed.data.conversationId,senderId:user.id,content:parsed.data.content},include:{sender:{select:{id:true,name:true,avatarUrl:true}}}});return NextResponse.json({message},{status:201});}
