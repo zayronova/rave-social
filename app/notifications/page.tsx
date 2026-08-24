@@ -1,17 +1,4 @@
 "use client";
-
-import { useEffect, useState } from "react";
-
-type Notification = { id: string; type: string; createdAt: string; readAt: string | null; actor: { id: string; name: string; avatarUrl: string } };
-
-export default function NotificationsPage() {
-  const [items, setItems] = useState<Notification[]>([]);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    fetch("/api/notifications").then(async r => { const d = await r.json(); if (!r.ok) return setError(d.error || "Unable to load notifications."); setItems(d.notifications); });
-    fetch("/api/notifications", { method: "PATCH" });
-  }, []);
-
-  return <main className="container" style={{ paddingTop: 30 }}><section className="card"><h1>Notifications</h1>{error && <div className="error">{error}</div>}{items.length === 0 && !error && <p>No notifications yet.</p>}{items.map(item => <div className="panel" style={{ margin: "10px 0" }} key={item.id}><strong>{item.actor.name}</strong> {item.type.replaceAll("_", " ")}<div className="stats">{new Date(item.createdAt).toLocaleString()}</div></div>)}</section></main>;
-}
+import { useEffect,useState } from "react";
+type Notification={id:string;type:string;createdAt:string;readAt:string|null;actor?:{id:string;name:string;avatarUrl:string}|null};
+export default function NotificationsPage(){const[items,setItems]=useState<Notification[]>([]);const[error,setError]=useState("");async function load(){const r=await fetch("/api/notifications");const d=await r.json();if(!r.ok)return setError(d.error||"Unable to load notifications.");setItems(d.notifications)}async function markRead(){const r=await fetch("/api/notifications",{method:"PATCH"});if(r.ok)load()}useEffect(()=>{load()},[]);return <main className="container" style={{paddingTop:30,maxWidth:760}}><section className="card"><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><h1>Notifications</h1><button className="action" onClick={markRead}>Mark all read</button></div>{error&&<div className="error">{error}</div>}{items.length===0?<p>No notifications yet.</p>:items.map(n=><article className="panel" style={{marginTop:10}} key={n.id}><strong>{n.actor?.name||"Rave Social"}</strong> <span>{n.type.replaceAll("_"," ").toLowerCase()}</span><div className="stats">{new Date(n.createdAt).toLocaleString()} {n.readAt?"":" · unread"}</div></article>)}</section></main>}
